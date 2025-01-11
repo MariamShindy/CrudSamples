@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using System.Data;
 using CompanyCrudTwo.HelperClasses;
 using CrudSamplesTwo.Helpers;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace CrudSamplesTwo
 {
@@ -59,6 +60,11 @@ namespace CrudSamplesTwo
       */
     #endregion
 
+    #region Entity collection & add bulk
+    /*
+     * EntityCollection: A class in LLBLGen that represents a collection of entities of the same type
+     */
+    #endregion
     #endregion
 
     internal class Program
@@ -76,6 +82,16 @@ namespace CrudSamplesTwo
 
             string connectionString = config.GetConnectionString("DefaultConnectionString")!;
             var adapter = new DataAccessAdapter(connectionString);
+
+            var services = new ServiceCollection();
+
+            services.AddTransient(provider => new DataAccessAdapter(connectionString));
+
+            services.AddSingleton<Helper>();
+
+            var serviceProvider = services.BuildServiceProvider();
+
+            var helper = serviceProvider.GetService<Helper>();
             #endregion
 
             #region CRUD
@@ -437,12 +453,12 @@ namespace CrudSamplesTwo
             #endregion
 
             #region Advanced example
-            //Thread thread1 = new Thread(() => Helper.PerformEmployeeOperation(adapter,3, IsolationLevel.ReadCommitted));
-            //Thread thread2 = new Thread(() => Helper.PerformEmployeeOperation(adapter,5, IsolationLevel.RepeatableRead));
-            //Thread thread3 = new Thread(() => Helper.PerformEmployeeOperation(adapter,7, IsolationLevel.Serializable));
-            //Thread thread4 = new Thread(() => Helper.PerformEmployeeOperation(adapter,8, IsolationLevel.ReadCommitted));
-            //Thread thread5 = new Thread(() => Helper.PerformDepartmentOperation(adapter,4, IsolationLevel.Serializable));
-            //Thread thread6 = new Thread(() => Helper.PerformDepartmentOperation(adapter,5, IsolationLevel.RepeatableRead));
+            //Thread thread1 = new Thread(() => helper!.PerformEmployeeOperation( 3, IsolationLevel.ReadCommitted));
+            //Thread thread2 = new Thread(() => helper!.PerformEmployeeOperation( 5, IsolationLevel.RepeatableRead));
+            //Thread thread4 = new Thread(() => helper!.PerformEmployeeOperation( 8, IsolationLevel.ReadCommitted));
+            //Thread thread5 = new Thread(() => helper!.PerformDepartmentOperation( 4, IsolationLevel.Serializable));
+            //Thread thread6 = new Thread(() => helper!.PerformDepartmentOperation( 5, IsolationLevel.RepeatableRead));
+            //Thread thread3 = new Thread(() => helper!.PerformEmployeeOperation( 7, IsolationLevel.Serializable));
 
             //thread1.Start();
             //thread2.Start();
@@ -460,6 +476,51 @@ namespace CrudSamplesTwo
 
             //Console.WriteLine("Operations completed.");
             #endregion
+
+            #endregion
+
+            #region Bulk add & EntityCollection
+            #region Bulk add
+            //var allEmployees = helper!.FetchExistingEmployees();
+            //foreach (var employee in allEmployees)
+            //    Console.WriteLine($"{employee.EmployeeId} :: {employee.Name}");
+
+            //var employees = new List<EmployeeEntity>
+            //{
+            //    new EmployeeEntity { Name = "Mahmoud", DepartmentId = 4, Salary = 5000 },
+            //    new EmployeeEntity { Name = "Karim", DepartmentId = 5, Salary = 6400 },
+            //    new EmployeeEntity { Name = "Samar", DepartmentId = 4, Salary = 5500 },
+            //    new EmployeeEntity { Name = "Madiha", DepartmentId = 5, Salary = 6200 }
+            //};
+
+            //helper!.BulkInsertEmployees(employees);
+            //Console.WriteLine("************************************");
+
+            //var updatedEmployees = helper!.FetchExistingEmployees();
+            //foreach (var employee in updatedEmployees)
+            //    Console.WriteLine($"{employee.EmployeeId} :: {employee.Name}");
+
+
+            //var allDepartments = helper!.FetchExistingDepartments();
+            //foreach(var department in allDepartments)
+            //    Console.WriteLine($"{department.DepartmentId} :: {department.Name}");
+
+            //var departments = new List<DepartmentEntity>
+            //{
+            //    new DepartmentEntity {Name = "IS"},
+            //    new DepartmentEntity {Name = "AI"},
+            //    new DepartmentEntity {Name = "IT"},
+            //    new DepartmentEntity {Name = "SC"},
+            //};
+
+            //helper!.BulkInsertDepartments(departments);
+            //Console.WriteLine("************************************");
+
+            //var updatedDepartments = helper!.FetchExistingDepartments();
+            //foreach (var department in updatedDepartments)
+            //    Console.WriteLine($"{department.DepartmentId} :: {department.Name}");
+            #endregion
+
 
             #endregion
         }

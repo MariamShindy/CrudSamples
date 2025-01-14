@@ -1,18 +1,29 @@
 ﻿using CompanyCrudTwo.DatabaseSpecific;
-using CompanyCrudTwo.EntityClasses;
 using SD.LLBLGen.Pro.ORMSupportClasses;
 using SD.LLBLGen.Pro.DQE.SqlServer;
 using System.Diagnostics;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
-using System.Data;
-using CompanyCrudTwo.HelperClasses;
 using CrudSamplesTwo.Helpers;
 using Microsoft.Extensions.DependencyInjection;
+using CrudSamplesTwo.Dtos;
 
 namespace CrudSamplesTwo
 {
     #region Notes
+    #region Topics
+    /*
+     * essential CRUD Add,Update,Delete,Get [Done]
+       transactions, IsolationLevel [Done]
+       add bulk, EntityCollection [Done]
+       edit bulk, EntityCollection [Done]
+       delete entities directly, RelationPredicateBucket [Done]
+       DTOs, ProjectionParams [DTOs Only done]
+       filter child list in the DTOs
+       prefetch
+     https://www.llblgen.com/Documentation/5.9/LLBLGen%20Pro%20RTF/index.htm
+     */
+    #endregion
 
     #region CRUD using llblgen
     //1] Open llblgen , create project
@@ -60,9 +71,35 @@ namespace CrudSamplesTwo
       */
     #endregion
 
-    #region Entity collection & add bulk
+    #region Entity collection & add and update bulk
     /*
      * EntityCollection: A class in LLBLGen that represents a collection of entities of the same type
+     */
+    /*
+     * To insert some entities, you put them in a EntityCollection 
+     * and save the EntityCollection, they will be inserted one after
+     * the other in a transaction
+     */
+    #endregion
+
+    #region Delete entities directly, RelationPredicateBucket
+    /*
+     * RelationPredicateBucket : used as a single unit to pass to a data-access
+     * adapter for filtering over multi-entities [Based on built in delegate
+     * Presicate]
+     * 
+     * RelationPredicateBucket : is a container to many predicates
+     * Usage :-
+     * 1] Multiple Conditions
+     * 2] Joins and Relationships
+     * 3] Complex Queries
+     */
+    #endregion
+
+    #region DTOS , ProjectionParams
+    /*
+     * Data Transfer Objects (DTOs) : is used to encapsulate data, 
+     * and send it from one subsystem of an application to another.
      */
     #endregion
     #endregion
@@ -479,7 +516,7 @@ namespace CrudSamplesTwo
 
             #endregion
 
-            #region Bulk add & EntityCollection
+            #region Bulk add & update , EntityCollection
             #region Bulk add
             //var allEmployees = helper!.FetchExistingEmployees();
             //foreach (var employee in allEmployees)
@@ -521,6 +558,123 @@ namespace CrudSamplesTwo
             //    Console.WriteLine($"{department.DepartmentId} :: {department.Name}");
             #endregion
 
+            #region Normal & bulk update
+            //var allDepartments = helper!.FetchExistingDepartments();
+            //Console.WriteLine("*********************************");
+            //Console.WriteLine("All Departments before updating");   
+            //Console.WriteLine("*********************************");
+
+            //foreach (var department in allDepartments)
+            //    Console.WriteLine($"{department.DepartmentId} :: {department.Name}");
+
+            //helper!.UpdateDepartments(allDepartments);
+
+            //Console.WriteLine("*********************************");
+            //Console.WriteLine("All Departments after updating");
+            //Console.WriteLine("*********************************");
+            //var updatedDepartments = helper!.FetchExistingDepartments();
+            //foreach (var department in updatedDepartments)
+            //    Console.WriteLine($"{department.DepartmentId} :: {department.Name}");
+
+            //var allEmployees = helper!.FetchExistingEmployees();
+            //Console.WriteLine("*********************************");
+            //Console.WriteLine("All Employees before updating");   
+            //Console.WriteLine("*********************************");
+            //foreach(var employee in allEmployees)
+            //{
+            //    Console.WriteLine($"{employee.EmployeeId} :: {employee.Name}");
+            //}
+
+            //helper!.UpdateEmployees(allEmployees);
+
+            //var updatedEmployees = helper!.FetchExistingEmployees();
+            //Console.WriteLine("*********************************");
+            //Console.WriteLine("All Employees after updating");
+            //Console.WriteLine("*********************************");
+            //foreach (var employee in updatedEmployees)
+            //{
+            //    Console.WriteLine($"{employee.EmployeeId} :: {employee.Name}");
+            //}
+
+
+            //**************************Bulk-Update**************************
+            //var allDepartments = helper!.FetchExistingDepartments();
+            //Console.WriteLine("*********************************");
+            //Console.WriteLine("All Departments before bulk updating");
+            //Console.WriteLine("*********************************");
+
+            //foreach (var department in allDepartments)
+            //    Console.WriteLine($"{department.DepartmentId} :: {department.Name}");
+
+            //int affectedRows = helper!.BulkUpdateDepartments();
+            //Console.ForegroundColor = ConsoleColor.Green;
+            //Console.WriteLine($"Updates done to {affectedRows} rows");
+            //Console.ResetColor();
+
+            //Console.WriteLine("*********************************");
+            //Console.WriteLine("All Departments after bulk updating");
+            //Console.WriteLine("*********************************");
+            //var updatedDepartments = helper!.FetchExistingDepartments();
+            //foreach (var department in updatedDepartments)
+            //    Console.WriteLine($"{department.DepartmentId} :: {department.Name}");
+
+
+            //var allEmployees = helper!.FetchExistingEmployees();
+            //Console.WriteLine("*********************************");
+            //Console.WriteLine("All Employees before bulk updating");
+            //Console.WriteLine("*********************************");
+
+            //foreach (var employee in allEmployees)
+            //    Console.WriteLine($"{employee.Name} :: {employee.Salary}");
+
+            //int affectedRows = helper!.BulkUpdateEmployees();
+            //Console.ForegroundColor = ConsoleColor.Green;
+            //Console.WriteLine($"Updates done to {affectedRows} rows");
+            //Console.ResetColor();
+
+            //Console.WriteLine("*********************************");
+            //Console.WriteLine("All Employees after bulk updating");
+            //Console.WriteLine("*********************************");
+            //var updatedEmployees = helper!.FetchExistingEmployees();
+            //foreach (var employee in updatedEmployees)
+            //    Console.WriteLine($"{employee.Name} :: {employee.Salary}");
+
+            #endregion
+
+            #endregion
+
+            #region Delete entities directly , RelationPredicateBucket
+            //*******************Delete************************
+            //int affectedRows = helper!.DeleteEmployees();
+            //Console.WriteLine($"Affected rows of deleting employees whose salary = 5500 : {affectedRows}");
+
+            //int affectedRows = helper!.DeleteDepartments();
+            //Console.WriteLine($"Affected rows of deleting departments whose name IS : {affectedRows}");
+
+            //*******************RelationPredicateBucket************************
+            //Console.WriteLine("Showing Employees with their Departments started");
+            //helper!.ShowEmployeesWithDepartment();
+            #endregion
+
+            #region DTOS
+            //Convert from employees to employees dto
+            //List<EmployeeDto> employees = helper!.GetEmployeeDtos();
+            //foreach( EmployeeDto employeeDto in employees )
+            //    Console.WriteLine($"{employeeDto.Name} :: {employeeDto.Salary}");
+
+            //Update employee using dto
+            //EmployeeDto employeeDto = new EmployeeDto()
+            //{
+            //    Name = "Mohamaden",
+            //    EmployeeId = 1009,
+            //    Salary = 10219
+            //};
+            //helper!.UpdateEmployeeFromDto(employeeDto);
+
+            //Filter and show departments using dto
+            //List<DepartmentDto> departmentDtos = helper!.GetFilteredDepartments("AI");
+            //foreach(var departmentDto in departmentDtos)
+            //    Console.WriteLine($"{departmentDto.DepartmentId} :: {departmentDto.Name}");
 
             #endregion
         }

@@ -18,7 +18,7 @@ namespace CrudSamplesTwo
        add bulk, EntityCollection [Done]
        edit bulk, EntityCollection [Done]
        delete entities directly, RelationPredicateBucket [Done]
-       DTOs, ProjectionParams [DTOs Only done]
+       DTOs, ProjectionParams [DTOs]
        filter child list in the DTOs
        prefetch
      https://www.llblgen.com/Documentation/5.9/LLBLGen%20Pro%20RTF/index.htm
@@ -100,6 +100,16 @@ namespace CrudSamplesTwo
     /*
      * Data Transfer Objects (DTOs) : is used to encapsulate data, 
      * and send it from one subsystem of an application to another.
+     */
+
+    /*
+     * ProjectionParams is a class used to provide parameters for query projections, 
+     * particularly when working with Dynamic Lists and Dynamic Result Sets.
+     */
+
+    /*
+     * projection parameters refer to the process of transforming or shaping the data retrieved
+     * from a database into a specific format or structure before returning it to the caller.
      */
     #endregion
     #endregion
@@ -656,7 +666,7 @@ namespace CrudSamplesTwo
             //helper!.ShowEmployeesWithDepartment();
             #endregion
 
-            #region DTOS
+            #region DTOS & ProjectionParams
             //Convert from employees to employees dto
             //List<EmployeeDto> employees = helper!.GetEmployeeDtos();
             //foreach( EmployeeDto employeeDto in employees )
@@ -675,6 +685,27 @@ namespace CrudSamplesTwo
             //List<DepartmentDto> departmentDtos = helper!.GetFilteredDepartments("AI");
             //foreach(var departmentDto in departmentDtos)
             //    Console.WriteLine($"{departmentDto.DepartmentId} :: {departmentDto.Name}");
+
+            //ProjectionParams
+            //var employeesAboveAvgSalary = helper!.FetchEmployeeNamesAndSalaries();
+            //foreach (var employee in employeesAboveAvgSalary)
+            //    Console.WriteLine($"==> {employee}");
+            //Console.WriteLine();
+            //Console.WriteLine();
+            //var departsIdGreaterThanOneThousand = helper!.FetchDepartmentsIdsAndNames();
+            //foreach (var department in departsIdGreaterThanOneThousand)
+            //    Console.WriteLine($"==> {department}");
+            //Console.WriteLine();
+            //Console.WriteLine();
+            //var employeesInDepartment = helper!.FetchEmployeeWithDepartment(1013);
+            //foreach (var employee in employeesInDepartment)
+            //    Console.WriteLine($"==> {employee}");
+
+            //Console.WriteLine();
+            //Console.WriteLine();
+            //var departmentsWithEmpCount = helper!.GetEmployeeCountPerDepartment();
+            //foreach(var department in  departmentsWithEmpCount)
+            //    Console.WriteLine($"==> {department}");
 
             #endregion
         }

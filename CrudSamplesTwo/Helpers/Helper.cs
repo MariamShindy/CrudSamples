@@ -6,7 +6,9 @@ using SD.LLBLGen.Pro.ORMSupportClasses;
 using SD.LLBLGen.Pro.QuerySpec;
 using System.Data;
 using CrudSamplesTwo.Dtos;
-using System.Net.Sockets;
+using CompanyCrudTwo.FactoryClasses;
+using SD.LLBLGen.Pro.QuerySpec.Adapter;
+using CompanyCrudTwo.Linq;
 
 namespace CrudSamplesTwo.Helpers
 {
@@ -20,7 +22,7 @@ namespace CrudSamplesTwo.Helpers
         }
 
         #region Transactions & Isoaltion level
-        public void PerformEmployeeOperation( int employeeId, IsolationLevel isolationLevel)
+        public void PerformEmployeeOperation(int employeeId, IsolationLevel isolationLevel)
         {
             Console.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} - Starting operation on Employee {employeeId} with Isolation Level {isolationLevel}");
             Console.WriteLine("**********************************************************************************");
@@ -118,7 +120,7 @@ namespace CrudSamplesTwo.Helpers
             var departmentCollection = new EntityCollection<DepartmentEntity>(departments);
             foreach (var department in departmentCollection)
             {
-                department.Name += "Update"; 
+                department.Name += "Update";
             }
             _adapter!.SaveEntityCollection(departmentCollection, true, false);
         }
@@ -188,7 +190,6 @@ namespace CrudSamplesTwo.Helpers
         #endregion
 
         #region DTOS , ProjectionParams
-        //Map from employees to employeesDtos
         public List<EmployeeDto> GetEmployeeDtos()
         {
             using var _adapter = _serviceProvider.GetService<DataAccessAdapter>();
@@ -216,7 +217,6 @@ namespace CrudSamplesTwo.Helpers
             Console.WriteLine("Employee updated from DTO.");
             Console.WriteLine($"{employee.EmployeeId} :: {employee.Name} :: {employee.Salary}");
         }
-
         public List<DepartmentDto> GetFilteredDepartments(string departmentName)
         {
             using var _adapter = _serviceProvider.GetService<DataAccessAdapter>();
@@ -235,7 +235,84 @@ namespace CrudSamplesTwo.Helpers
             return departmentDtos;
         }
 
+        //Projection Params
+        public List<(string Name, decimal Salary)> FetchEmployeeNamesAndSalaries()
+        {
+            using var _adapter = _serviceProvider.GetService<DataAccessAdapter>();
+            var qf = new QueryFactory();
+            var q = qf.Employee
+                      .Where(EmployeeFields.Salary > 5000)
+                      .Select(() => new
+                      {
+                          Name = EmployeeFields.Name.ToValue<string>(),
+                          Salary = EmployeeFields.Salary.ToValue<decimal>()
+                      });
+
+            var results = _adapter?.FetchQuery(q);
+            var tuples = results?.Select(e => (e.Name, e.Salary)).ToList();
+            Console.WriteLine("Fetched Employee names and salaries using projection.");
+            return tuples ?? new List<(string Name, decimal Salary)>();
+        }
+        public List<(int Id, string Name, int DeptId)> FetchEmployeeWithDepartment(int DepId)
+        {
+            using var _adapter = _serviceProvider.GetService<DataAccessAdapter>();
+            var qf = new QueryFactory();
+            var q = qf.Employee
+                      .Where(EmployeeFields.DepartmentId == DepId)
+                      .Select(() => new
+                      {
+                          Id = EmployeeFields.EmployeeId.ToValue<int>(),
+                          Name = EmployeeFields.Name.ToValue<string>(),
+                          DeptId = EmployeeFields.DepartmentId.ToValue<int>()
+                      });
+            var results = _adapter?.FetchQuery(q);
+            var tuples = results?.Select(e => (e.Id, e.Name, e.DeptId)).ToList();
+            Console.WriteLine($"Fetched Employees ids and names in department {DepId} using projection.");
+            return tuples ?? new List<(int Id, string Name, int DeptId)>();
+        }
+        public List<(int Id, string Name)> FetchDepartmentsIdsAndNames()
+        {
+            using var _adapter = _serviceProvider.GetService<DataAccessAdapter>();
+            var qf = new QueryFactory();
+            var q = qf.Department
+                      .Where(DepartmentFields.DepartmentId > 1000)
+                      .Select(() => new
+                      {
+                          Id = DepartmentFields.DepartmentId.ToValue<int>(),
+                          Name = DepartmentFields.Name.ToValue<string>()
+                      });
+
+            var results = _adapter?.FetchQuery(q);
+            var tuples = results?.Select(d => (d.Id, d.Name)).ToList();
+            Console.WriteLine("Fetched Departments ids and names using projection.");
+            return tuples ?? new List<(int Id, string Name)>();
+        }
+
+        public List<(int DepartmentId, string DepartmentName, int EmployeeCount)> GetEmployeeCountPerDepartment()
+        {
+            List<(int DepartmentId, string DepartmentName, int EmployeeCount)> departmentDetails = new List<(int, string, int)>();
+            var _adapter = _serviceProvider.GetService<DataAccessAdapter>();
+            var query = new LinqMetaData(_adapter)
+                    .Employee
+                     .Where(e => e.DepartmentId != null)
+                    .GroupBy(e => new { e.DepartmentId, e.Department.Name })
+                    .Select(g => new
+                    {
+                        g.Key.DepartmentId,
+                        g.Key.Name,
+                        EmployeeCount = g.Count()
+                    });
+            foreach (var row in query)
+                departmentDetails.Add((row.DepartmentId ?? 0, row.Name, row.EmployeeCount));
+            Console.WriteLine("Fetched Departments ids and names with employees count using projection.");
+            return departmentDetails;
+        }
+
+
+
         #endregion
+
+
 
         #region Helper methods
         public List<EmployeeEntity> FetchExistingEmployees()

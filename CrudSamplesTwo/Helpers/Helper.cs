@@ -9,6 +9,7 @@ using CrudSamplesTwo.Dtos;
 using CompanyCrudTwo.FactoryClasses;
 using SD.LLBLGen.Pro.QuerySpec.Adapter;
 using CompanyCrudTwo.Linq;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace CrudSamplesTwo.Helpers
 {
@@ -312,7 +313,74 @@ namespace CrudSamplesTwo.Helpers
 
         #endregion
 
+        #region Filter child list in the DTOs
+        public List<ParentDto> FilterChildrenByMinAge(List<ParentDto> parents, int minAge)
+        {
+            foreach (var parent in parents)
+            {
+                parent.Children = parent.Children.Where(child => child.Age >= minAge).ToList();
+            }
+            return parents;
+        }
+        public List<ParentDto> FilterChildrenByNameStartingWith(List<ParentDto> parents, char startingLetter)
+        {
+            foreach (var parent in parents)
+            {
+                parent.Children = parent.Children.Where(child => child.Name.StartsWith(startingLetter)).ToList();
+            }
+            return parents;
+        }
+        public List<ParentDto> FilterChildrenByAgeAndNameLength(List<ParentDto> parents, int minAge, int maxAge, int minNameLength)
+        {
+            foreach (var parent in parents)
+            {
+                parent.Children = parent.Children
+                    .Where(child => child.Age >= minAge && child.Age <= maxAge && child.Name.Length > minNameLength)
+                    .ToList();
+            }
+            return parents;
+        }
+        public Dictionary<string, List<ChildDto>> GroupChildrenByAgeRange(List<ParentDto> parents)
+        {
+            var groupedChildren = new Dictionary<string, List<ChildDto>>();
 
+            foreach (var parent in parents)
+            {
+                foreach (var child in parent.Children)
+                {
+                    string ageRange = GetAgeRange(child.Age);
+                    if (!groupedChildren.ContainsKey(ageRange))
+                    {
+                        groupedChildren[ageRange] = new List<ChildDto>();
+                    }
+                    groupedChildren[ageRange].Add(child);
+                }
+            }
+            return groupedChildren;
+        }
+
+        private static string GetAgeRange(int age)
+        {
+            if (age >= 10 && age <= 15) return "10 - 15";
+            if (age >= 16 && age <= 20) return "16 - 20";
+            if (age >= 21 && age <= 40) return "21 - 40";
+            return "Other";
+        }
+        public List<ParentDto> GetParentsHasNumberOfChilds(int minChilds , List<ParentDto> parents)
+        {
+            return parents
+           .Where(parent => parent.Children.Count >= minChilds)  
+           .ToList();
+        }
+        public Dictionary<char, List<ChildDto>> GroupChildrenByGender(List<ParentDto> parents)
+        {
+            return parents
+                .SelectMany(parent => parent.Children)   
+                .GroupBy(child => child.Gender)          
+                .ToDictionary(group => group.Key, group => group.ToList()); 
+        }
+
+        #endregion
 
         #region Helper methods
         public List<EmployeeEntity> FetchExistingEmployees()

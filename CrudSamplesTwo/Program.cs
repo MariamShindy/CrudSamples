@@ -708,6 +708,95 @@ namespace CrudSamplesTwo
             //    Console.WriteLine($"==> {department}");
 
             #endregion
+
+            #region Filter child list in the DTOs
+            ParentDto parentDto = new ParentDto
+            {
+                Name = "ParentOne",
+                Id = 1,
+                Children = new List<ChildDto>
+            {
+                new ChildDto() { Id = 10, Name = "TChild1", Age = 5, Gender = 'F' },
+                new ChildDto() { Id = 20, Name = "AChild2", Age = 10, Gender = 'M' },
+                new ChildDto() { Id = 30, Name = "KChild3", Age = 17, Gender = 'F' }
+            }
+            };
+            ParentDto parentDto2 = new ParentDto
+            {
+                Name = "ParentTwo",
+                Id = 2,
+                Children = new List<ChildDto>
+            {
+                new ChildDto() { Id = 40, Name = "AChild1", Age = 39, Gender = 'F' },
+                new ChildDto() { Id = 50, Name = "NChild2", Age = 10, Gender = 'M' },
+                new ChildDto() { Id = 60, Name = "MChild3", Age = 17, Gender = 'F' }
+            }
+            };
+            List<ParentDto> Parents = new List<ParentDto> { parentDto , parentDto2};
+            //List<ParentDto> Result = helper!.FilterChildrenByMinAge(Parents,15);
+            //foreach (var result in Result)
+            //{
+            //    Console.WriteLine($"Parent : {result.Name}");
+            //    foreach(var child in result.Children)
+            //    {
+            //        Console.WriteLine($"Child : {child.Name}");
+            //    }
+            //}
+            //List<ParentDto> Result = helper!.FilterChildrenByNameStartingWith(Parents, 'A');
+            //foreach (var result in Result)
+            //{
+            //    Console.WriteLine($"Parent : {result.Name}");
+            //    foreach (var child in result.Children)
+            //    {
+            //        Console.WriteLine($"*********Child : {child.Name}");
+            //    }
+            //}
+            //List<ParentDto> Result = helper!.FilterChildrenByAgeAndNameLength(Parents, 8,17,3);
+            //foreach (var result in Result)
+            //{
+            //    Console.WriteLine($"Parent : {result.Name}");
+            //    foreach (var child in result.Children)
+            //    {
+            //        Console.WriteLine($"*********Child : {child.Name} , {child.Age}");
+            //    }
+            //    Console.WriteLine();
+            //}
+            //Dictionary<string, List<ChildDto>> dictionaryResult = new Dictionary<string, List<ChildDto>>();
+            //dictionaryResult = helper!.GroupChildrenByAgeRange(Parents);
+            //foreach(KeyValuePair<string,List<ChildDto>> Kvp in dictionaryResult)
+            //{
+            //    Console.WriteLine($" =======> {Kvp.Key}");
+            //    foreach(var child in Kvp.Value)
+            //    {
+            //        Console.WriteLine($"{child.Name} , {child.Age}");
+            //    }
+            //    Console.WriteLine();
+            //}
+
+            //List<ParentDto> result = helper!.GetParentsHasNumberOfChilds(5, Parents);
+            //if (result.Any())
+            //{
+            //    foreach(var Parent in result)
+            //    {
+            //        Console.WriteLine($"{Parent.Name}");
+            //    }
+            //}
+            //else
+            //{
+            //    Console.WriteLine($"No parent found");
+            //}
+
+            //var groupedChildren = helper!.GroupChildrenByGender(Parents);
+
+            //foreach (var group in groupedChildren)
+            //{
+            //    Console.WriteLine($"Gender: {group.Key}");
+            //    foreach (var child in group.Value)
+            //    {
+            //        Console.WriteLine($" {child.Name} (Age: {child.Age})");
+            //    }
+            //}
+            #endregion
         }
     }
 }

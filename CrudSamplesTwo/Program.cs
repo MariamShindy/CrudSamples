@@ -18,9 +18,9 @@ namespace CrudSamplesTwo
        add bulk, EntityCollection [Done]
        edit bulk, EntityCollection [Done]
        delete entities directly, RelationPredicateBucket [Done]
-       DTOs, ProjectionParams [DTOs]
-       filter child list in the DTOs
-       prefetch
+       DTOs, ProjectionParams [Done]
+       filter child list in the DTOs [Done]
+       prefetch [Done]
      https://www.llblgen.com/Documentation/5.9/LLBLGen%20Pro%20RTF/index.htm
      */
     #endregion
@@ -110,7 +110,41 @@ namespace CrudSamplesTwo
     /*
      * projection parameters refer to the process of transforming or shaping the data retrieved
      * from a database into a specific format or structure before returning it to the caller.
+     * 
+     * 
+     * ProjectionParams is a feature in LLBLGen Pro that allows you to define the columns or properties you want 
+     * to fetch when querying the database, without fetching the entire entity. This is useful for performance 
+     * optimization when you only need specific fields rather than all the data from an entity.
+       Instead of querying all columns of an entity, ProjectionParams lets you project only the required fields 
+       into a result, often used when working with DTOs (Data Transfer Objects) or when optimizing queries
+       for performance. It also makes queries more efficient, reducing unnecessary data retrieval.
      */
+    #endregion
+
+    #region Filter child list in DTOS
+    /*
+     * Filtering child lists in DTOs (Data Transfer Objects) is a common practice in applications 
+     * where you need to return only specific subsets of related data to the client. 
+     * This ensures that the client receives only the necessary data, improving performance and reducing payload size. 
+     */
+    #endregion
+
+    #region Prefetch
+    /*
+     * Prefetching in LLBLGen is a technique used to efficiently load related entities (child or associated entities)
+     * alongside the main entity in a single database query or minimal number of queries
+     */
+
+    #endregion
+
+    #region Revision
+    //https://mono.software/2018/07/21/getting-started-with-llblgen-2/
+    //https://www.llblgen.com/Documentation/5.1/LLBLGen%20Pro%20RTF/Using%20the%20generated%20code/Adapter/gencode_usingentityclasses_modifying.htm
+    //https://www.llblgen.com/Documentation/5.4/LLBLGen%20Pro%20RTF/Using%20the%20generated%20code/SelfServicing/gencode_transactions.htm
+    //https://www.llblgen.com/Documentation/5.8/LLBLGen%20Pro%20RTF/Using%20the%20generated%20code/Adapter/gencode_usingcollectionclasses_adapter.htm
+    //https://www.llblgen.com/documentation/5.2/LLBLGen%20Pro%20RTF/Using%20the%20generated%20code/SelfServicing/gencode_usingentityclasses_deleting.htm
+    //https://www.llblgen.com/documentation/5.2/Derived%20Models/dto_llblgen.htm
+    //https://www.llblgen.com/documentation/5.2/LLBLGen%20Pro%20RTF/Using%20the%20generated%20code/SelfServicing/gencode_prefetchpaths.htm
     #endregion
     #endregion
 
@@ -118,6 +152,7 @@ namespace CrudSamplesTwo
     {
         static void Main(string[] args)
         {
+
             #region Config
             RuntimeConfiguration.ConfigureDQE<SQLServerDQEConfiguration>(
                 c => c.SetTraceLevel(TraceLevel.Verbose)
@@ -795,6 +830,36 @@ namespace CrudSamplesTwo
             //    {
             //        Console.WriteLine($" {child.Name} (Age: {child.Age})");
             //    }
+            //}
+            #endregion
+
+            #region Prefertch
+            //helper!.FetchDepartmentWithEmployees(1011);
+
+            //helper!.FetchDepartmentsWithEmployeesFilteredByMinSalary(1000);
+            #endregion
+
+            #region Advanced examples
+            //try
+            //{
+            //    helper!.TryAllOperations(isolationLevel: System.Data.IsolationLevel.ReadCommitted);
+            //    Console.WriteLine("Operations completed successfully.");
+            //}
+            //catch (Exception ex)
+            //{
+            //    Console.WriteLine($"An error occurred: {ex.Message}");
+            //}
+
+            //NOT WORKING
+            //try
+            //{
+            //    helper!.ExecuteEmployeeManagementOperations(1000, System.Data.IsolationLevel.ReadCommitted);
+            //    Console.WriteLine("Operations completed successfully.");
+                
+            //}
+            //catch (Exception ex)
+            //{
+            //    Console.WriteLine($"An error occurred: {ex.Message}");
             //}
             #endregion
         }

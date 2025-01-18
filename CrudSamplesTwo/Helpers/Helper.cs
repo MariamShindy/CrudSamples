@@ -10,6 +10,8 @@ using CompanyCrudTwo.FactoryClasses;
 using SD.LLBLGen.Pro.QuerySpec.Adapter;
 using CompanyCrudTwo.Linq;
 using static System.Net.Mime.MediaTypeNames;
+using CompanyCrudTwo;
+using System.Transactions;
 
 namespace CrudSamplesTwo.Helpers
 {
@@ -23,7 +25,7 @@ namespace CrudSamplesTwo.Helpers
         }
 
         #region Transactions & Isoaltion level
-        public void PerformEmployeeOperation(int employeeId, IsolationLevel isolationLevel)
+        public void PerformEmployeeOperation(int employeeId, System.Data.IsolationLevel isolationLevel)
         {
             Console.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} - Starting operation on Employee {employeeId} with Isolation Level {isolationLevel}");
             Console.WriteLine("**********************************************************************************");
@@ -56,7 +58,7 @@ namespace CrudSamplesTwo.Helpers
         }
 
 
-        public void PerformDepartmentOperation(int departmentId, IsolationLevel isolationLevel)
+        public void PerformDepartmentOperation(int departmentId, System.Data.IsolationLevel isolationLevel)
         {
             Console.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} - Starting operation on Department {departmentId} with Isolation Level {isolationLevel}");
             Console.WriteLine("**********************************************************************************");
@@ -366,40 +368,234 @@ namespace CrudSamplesTwo.Helpers
             if (age >= 21 && age <= 40) return "21 - 40";
             return "Other";
         }
-        public List<ParentDto> GetParentsHasNumberOfChilds(int minChilds , List<ParentDto> parents)
+        public List<ParentDto> GetParentsHasNumberOfChilds(int minChilds, List<ParentDto> parents)
         {
             return parents
-           .Where(parent => parent.Children.Count >= minChilds)  
+           .Where(parent => parent.Children.Count >= minChilds)
            .ToList();
         }
         public Dictionary<char, List<ChildDto>> GroupChildrenByGender(List<ParentDto> parents)
         {
             return parents
-                .SelectMany(parent => parent.Children)   
-                .GroupBy(child => child.Gender)          
-                .ToDictionary(group => group.Key, group => group.ToList()); 
+                .SelectMany(parent => parent.Children)
+                .GroupBy(child => child.Gender)
+                .ToDictionary(group => group.Key, group => group.ToList());
+        }
+
+        #endregion
+
+        #region Prefetch
+        public void FetchDepartmentWithEmployees(int departmentId)
+        {
+            using var _adapter = _serviceProvider.GetService<DataAccessAdapter>();
+            var department = new DepartmentEntity(departmentId);
+
+            var prefetchPath = new PrefetchPath2(EntityType.DepartmentEntity)
+            {
+                DepartmentEntity.PrefetchPathEmployees
+            };
+
+            if (_adapter!.FetchEntity(department, prefetchPath))
+            {
+                Console.WriteLine($"Department: {department.Name}");
+                foreach (var employee in department.Employees)
+                {
+                    Console.WriteLine($"  Employee: {employee.Name}, Salary: {employee.Salary}");
+                }
+            }
+            else
+            {
+                Console.WriteLine("Department not found.");
+            }
+        }
+
+        public void FetchDepartmentsWithEmployeesFilteredByMinSalary(decimal minSalary)
+        {
+            using var _adapter = _serviceProvider.GetService<DataAccessAdapter>();
+            var bucket = new RelationPredicateBucket();
+
+            var prefetchPath = new PrefetchPath2(EntityType.DepartmentEntity);
+            var employeePrefetch = prefetchPath.Add(DepartmentEntity.PrefetchPathEmployees);
+            employeePrefetch.Filter.Add(EmployeeFields.Salary.SetObjectAlias("Employee").GreaterThan(minSalary));
+
+            var departments = new EntityCollection<DepartmentEntity>();
+            _adapter!.FetchEntityCollection(departments, bucket, prefetchPath);
+
+            foreach (var department in departments)
+            {
+                Console.WriteLine($"Department: {department.Name}");
+                foreach (var employee in department.Employees)
+                {
+                    Console.WriteLine($"Employee: {employee.Name}, Salary: {employee.Salary:C}");
+                }
+            }
+        }
+        #endregion
+
+        #region Advanced Examples
+        public void TryAllOperations(System.Data.IsolationLevel isolationLevel)
+        {
+            using var _adapter = _serviceProvider.GetService<DataAccessAdapter>();
+            _adapter!.StartTransaction(isolationLevel, "DepartmentTransaction");
+            try
+            {
+                var newDepartment = new DepartmentEntity { Name = "LR" };
+                _adapter.SaveEntity(newDepartment);
+
+                var employees = new EntityCollection<EmployeeEntity>
+            {
+                new EmployeeEntity { Name = "Marina", Salary = 1000, DepartmentId = newDepartment.DepartmentId },
+                new EmployeeEntity { Name = "Mahmoud", Salary = 7000, DepartmentId = newDepartment.DepartmentId }
+            };
+                _adapter.SaveEntityCollection(employees,true,false);
+
+                newDepartment.Name = "LR & DevOps";
+                _adapter.SaveEntity(newDepartment,true,false);
+
+                foreach (var employee in employees)
+                {
+                    employee.Salary += 1000;
+                }
+                _adapter.SaveEntityCollection(employees);
+
+                var prefetchPath = new PrefetchPath2(EntityType.DepartmentEntity)
+            {
+                DepartmentEntity.PrefetchPathEmployees
+            };
+                var departments = new EntityCollection<DepartmentEntity>();
+                _adapter.FetchEntityCollection(departments, null, prefetchPath);
+
+                var resultDto = departments.Select(dept => new DepartmentDto
+                {
+                    DepartmentId = dept.DepartmentId,
+                    Name = dept.Name,
+                    Employees = dept.Employees
+                        .Where(emp => emp.Salary > 2000)
+                        .Select(emp => new EmployeeDto
+                        {
+                            EmployeeId = emp.EmployeeId,
+                            Name = emp.Name,
+                            Salary = emp.Salary
+                        })
+                        .ToList()
+                }).ToList();
+                foreach(var department in resultDto)
+                {
+                    Console.WriteLine($"Department : {department.Name}");
+                    foreach(var employee in department.Employees)
+                        Console.WriteLine($"Employee ==> {employee.Name} , {employee.Salary}");
+                }
+                var deleteBucket = new RelationPredicateBucket(EmployeeFields.Salary.LesserThan(2000));
+                _adapter.DeleteEntitiesDirectly(typeof(EmployeeEntity), deleteBucket);
+
+                _adapter.Commit();
+            }
+            catch(Exception ex) 
+            {
+                Console.WriteLine($"{ex.Message}");
+                _adapter.Rollback();
+            }
+        }
+
+       //Have an exception should be edited
+        public void ExecuteEmployeeManagementOperations(decimal minSalary, System.Data.IsolationLevel isolationLevel)
+        {
+            using var _adapter = _serviceProvider.GetService<DataAccessAdapter>();
+
+            _adapter!.StartTransaction(isolationLevel, "EmployeeManagementTransaction");
+
+            try
+            {
+                var newDepartment = new DepartmentEntity
+                {
+                    Name = "Sales"
+                };
+                _adapter.SaveEntity(newDepartment, true, false);
+
+                var employees = new EntityCollection<EmployeeEntity>
+        {
+            new EmployeeEntity { Name = "Amira", Salary = 5000, DepartmentId = newDepartment.DepartmentId },
+            new EmployeeEntity { Name = "Amar", Salary = 55000, DepartmentId = newDepartment.DepartmentId },
+            new EmployeeEntity { Name = "Amgad", Salary = 45000, DepartmentId = newDepartment.DepartmentId }
+        };
+                _adapter.SaveEntityCollection(employees, true, false);
+
+                var softDeleteBucket = new RelationPredicateBucket(EmployeeFields.Salary < 50000);
+                var employeesToDelete = new EntityCollection<EmployeeEntity>();  
+                _adapter.FetchEntityCollection(employeesToDelete, softDeleteBucket);
+                foreach (var employee in employeesToDelete)
+                {
+                    _adapter.DeleteEntity(employee);
+                    _adapter.SaveEntity(employee);
+                }
+
+                var prefetchPath = new PrefetchPath2(EntityType.DepartmentEntity)
+        {
+            DepartmentEntity.PrefetchPathEmployees
+        };
+
+                var departmentBucket = new RelationPredicateBucket();
+                var departments = new EntityCollection<DepartmentEntity>();
+                _adapter.FetchEntityCollection(departments, departmentBucket, prefetchPath);
+
+                var departmentDtos = departments.Select(department => new DepartmentDto
+                {
+                    Name = department.Name,
+                    Employees = department.Employees
+                        .Where(emp => emp.Salary >= minSalary) 
+                        .Select(emp => new EmployeeDto
+                        {
+                            Name = emp.Name,
+                            Salary = emp.Salary
+                        })
+                        .ToList()
+                }).ToList();
+
+                var bulkUpdateBucket = new RelationPredicateBucket(DepartmentFields.Name == "Sales");
+                /*
+                 * var employeesToDelete = new EntityCollection<EmployeeEntity>();  
+                _adapter.FetchEntityCollection(employeesToDelete, softDeleteBucket);
+                 */
+                var employeesInSales = new EntityCollection<EmployeeEntity>();
+                _adapter.FetchEntityCollection(employeesInSales, bulkUpdateBucket);
+                foreach (var employee in employeesInSales)
+                {
+                    employee.Salary += 500; 
+                }
+                _adapter.SaveEntityCollection(employeesInSales, true, false);
+
+                var deleteBucket = new RelationPredicateBucket(EmployeeFields.Name == "Amira");
+                _adapter.DeleteEntitiesDirectly(typeof(EmployeeEntity), deleteBucket);
+
+                _adapter.Commit();
+            }
+            catch (Exception ex)
+            {
+                _adapter.Rollback();
+                Console.WriteLine($"An error occurred: {ex.Message}");
+            }
         }
 
         #endregion
 
         #region Helper methods
         public List<EmployeeEntity> FetchExistingEmployees()
-        {
-            Console.WriteLine("Fetching Employees started");
-            using var _adapter = _serviceProvider.GetService<DataAccessAdapter>();
-            var employeesCollection = new EntityCollection<EmployeeEntity>();
-            _adapter!.FetchEntityCollection(employeesCollection, new RelationPredicateBucket());
-            return new List<EmployeeEntity>(employeesCollection);
-        }
-        public List<DepartmentEntity> FetchExistingDepartments()
-        {
-            Console.WriteLine("Fetching Departments started");
-            using var _adapter = _serviceProvider.GetService<DataAccessAdapter>();
-            var departmentsCollection = new EntityCollection<DepartmentEntity>();
-            _adapter!.FetchEntityCollection(departmentsCollection, new RelationPredicateBucket());
-            return new List<DepartmentEntity>(departmentsCollection);
-        }
-        #endregion
+            {
+                Console.WriteLine("Fetching Employees started");
+                using var _adapter = _serviceProvider.GetService<DataAccessAdapter>();
+                var employeesCollection = new EntityCollection<EmployeeEntity>();
+                _adapter!.FetchEntityCollection(employeesCollection, new RelationPredicateBucket());
+                return new List<EmployeeEntity>(employeesCollection);
+            }
+            public List<DepartmentEntity> FetchExistingDepartments()
+            {
+                Console.WriteLine("Fetching Departments started");
+                using var _adapter = _serviceProvider.GetService<DataAccessAdapter>();
+                var departmentsCollection = new EntityCollection<DepartmentEntity>();
+                _adapter!.FetchEntityCollection(departmentsCollection, new RelationPredicateBucket());
+                return new List<DepartmentEntity>(departmentsCollection);
+            }
+            #endregion
     }
 }
 
